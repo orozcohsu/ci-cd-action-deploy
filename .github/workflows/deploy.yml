@@ -56,17 +56,12 @@ jobs:
 
           # 2. 建立或進入主機上的專案資料夾
           mkdir -p /var/www/ci-cd-action-deploy
-          cd /var/www/ci-cd-action-deploy
+          cd /var/www
 
-          # 3. 徹底清空或重置資料夾，重新從 GitHub 拉取程式碼以確保乾淨
-          if [ ! -d ".git" ]; then
-            git init
-            git remote add origin https://github.com/orozcohsu/ci-cd-action-deploy.git
-          fi
-          
-          # 強制拉取 main 分支並覆蓋本地
-          git fetch origin main
-          git reset --hard FETCH_HEAD
+          # 3. 移除舊資料夾並重新 Clone，確保檔案百分之百存在
+          rm -rf ci-cd-action-deploy
+          git clone https://github.com
+          cd ci-cd-action-deploy
 
           # 4. 安裝生產環境套件並用 PM2 啟動/重啟 3000 埠服務
           npm install --production
