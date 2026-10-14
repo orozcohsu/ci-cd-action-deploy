@@ -56,7 +56,7 @@ jobs:
           # 註：為了方便練習，我們直接在主機上初始化 git 並強行拉取
           if [ ! -d ".git" ]; then
             git init
-            git remote add origin https://github.com{{ github.repository }}.git
+            git remote add origin https://github.com/orozcohsu/ci-cd-action-deploy.git
           fi
           git fetch --all
           git reset --hard origin/main
