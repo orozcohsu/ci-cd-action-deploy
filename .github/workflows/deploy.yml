@@ -19,6 +19,9 @@ jobs:
 
     - name: 安裝相依套件
       run: npm install
+    
+    - name: 修正 Jest 執行檔權限
+      run: chmod +x ./node_modules/.bin/jest
 
     - name: 執行單元測試
       run: npm test
