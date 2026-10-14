@@ -1,0 +1,64 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ] # 當程式碼推送到 main 分支時觸發
+
+jobs:
+  # 階段一：持續整合 (CI)
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 複製 GitHub 程式碼
+      uses: actions/checkout@v4
+
+    - name: 設定 Node.js 環境
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: 安裝相依套件
+      run: npm install
+
+    - name: 執行單元測試
+      run: npm test
+
+  # 階段二：持續部署 (CD)
+  deploy:
+    needs: test # 必須等 test 成功通過才會執行部署
+    runs-on: ubuntu-latest
+    steps:
+    - name: 遠端 SSH 連線並部署
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: '172.233.81.163'
+        username: 'root'
+        password: ${{ secrets.SERVER_PASSWORD }} # 保護密碼，稍後在 GitHub 設定
+        port: 22
+        script: |
+          # 1. 檢查主機環境是否安裝 Node.js 與 PM2 (若無則自動安裝)
+          if ! command -v node &> /dev/null; then
+            curl -fsSL https://nodesource.com | bash -
+            apt-get install -y nodejs
+          fi
+          if ! command -v pm2 &> /dev/null; then
+            npm install -y -g pm2
+          fi
+
+          # 2. 建立或進入主機上的專案資料夾
+          mkdir -p /var/www/ci-cd-action-deploy
+          cd /var/www/ci-cd-action-deploy
+
+          # 3. 從 GitHub 重新拉取最新程式碼（這裡採直接覆蓋或初始化簡化流程）
+          # 註：為了方便練習，我們直接在主機上初始化 git 並強行拉取
+          if [ ! -d ".git" ]; then
+            git init
+            git remote add origin https://github.com{{ github.repository }}.git
+          fi
+          git fetch --all
+          git reset --hard origin/main
+
+          # 4. 安裝生產環境套件並用 PM2 啟動/重啟 3000 埠服務
+          npm install --production
+          pm2 delete all || true
+          pm2 start server.js --name "my-add-app"

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CI/CD 練習 - 自動加法網頁</title>
+    <style>
+        body { font-family: Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f2f5; margin: 0; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #28a745; }
+        .result { font-size: 24px; color: #007bff; font-weight: bold; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🚀 CI/CD 自動部署成功！</h1>
+    <p>正在自動計算：5 + 10 ...</p>
+    <div class="result" id="output"></div>
+</div>
+
+<script>
+    // 網頁載入時自動計算 5 + 10
+    const num1 = 5;
+    const num2 = 10;
+    const sum = num1 + num2;
+    document.getElementById('output').innerText = `計算結果：${num1} + ${num2} = ${sum}`;
+</script>
+
+</body>
+</html>
