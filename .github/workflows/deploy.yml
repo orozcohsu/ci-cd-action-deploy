@@ -39,26 +39,32 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         port: 22
         script: |
-          # 1. 強制 apt-get 使用 IPv4 避開網路斷線問題，並安裝 Node.js 與 npm
-          apt-get update -o Acquire::ForceIPv4=true -y
+          # 1. 自動修復主機軟體源：將斷線的 ossplanet 替換為官方預設穩定源
+          if grep -q "ossplanet.net" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
+            sed -i 's/mirror.ossplanet.net/archive.raspbian.org/g' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null || true
+          fi
+
+          # 強制更新套件庫清單
+          apt-get update -y
           
+          # 2. 安裝 Node.js 與 npm
           if ! command -v node &> /dev/null; then
-            apt-get install -o Acquire::ForceIPv4=true -y nodejs
+            apt-get install -y nodejs
           fi
           
           if ! command -v npm &> /dev/null; then
-            apt-get install -o Acquire::ForceIPv4=true -y npm
+            apt-get install -y npm
           fi
           
           if ! command -v pm2 &> /dev/null; then
             npm install -g pm2
           fi
 
-          # 2. 確保進入正確的網頁根目錄
+          # 3. 進入網頁根目錄
           mkdir -p /var/www
           cd /var/www
 
-          # 3. 清理舊目錄，並使用純文字變數組合網址，避免斜線被吞掉
+          # 4. 清理舊目錄並重新 Clone 確保代碼最新
           rm -rf ci-cd-action-deploy
           
           GH_URL="https://github.com"
@@ -67,7 +73,8 @@ jobs:
           
           cd ci-cd-action-deploy
 
-          # 4. 安裝生產環境套件並用 PM2 啟動/重啟 3000 埠服務
+          # 5. 安裝生產環境套件並用 PM2 啟動/重啟 3000 埠服務
           npm install --production
           pm2 delete "my-add-app" || true
           pm2 start server.js --name "my-add-app"
+
