@@ -34,7 +34,7 @@ jobs:
     - name: 遠端 SSH 連線並部署
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: '172.233.81.163'
+        host: '219.70.47.7' # 已修正為新主機 IP
         username: 'root'
         password: ${{ secrets.SERVER_PASSWORD }}
         port: 22
