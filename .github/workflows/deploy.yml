@@ -34,33 +34,37 @@ jobs:
     - name: 遠端 SSH 連線並部署
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: '219.70.47.7' # 已修正為新主機 IP
+        host: '219.70.47.7'
         username: 'root'
         password: ${{ secrets.SERVER_PASSWORD }}
         port: 22
         script: |
-          # 1. 確保系統套件庫更新，並安裝 Node.js、npm 與 PM2
-          apt-get update -y
+          # 1. 強制 apt-get 使用 IPv4 避開網路斷線問題，並安裝 Node.js 與 npm
+          apt-get update -o Acquire::ForceIPv4=true -y
           
           if ! command -v node &> /dev/null; then
-            apt-get install -y nodejs
+            apt-get install -o Acquire::ForceIPv4=true -y nodejs
           fi
           
           if ! command -v npm &> /dev/null; then
-            apt-get install -y npm
+            apt-get install -o Acquire::ForceIPv4=true -y npm
           fi
           
           if ! command -v pm2 &> /dev/null; then
             npm install -g pm2
           fi
 
-          # 2. 建立或進入主機上的專案資料夾
-          mkdir -p /var/www/ci-cd-action-deploy
+          # 2. 確保進入正確的網頁根目錄
+          mkdir -p /var/www
           cd /var/www
 
-          # 3. 移除舊資料夾並重新 Clone，確保檔案百分之百存在
+          # 3. 清理舊目錄，並使用純文字變數組合網址，避免斜線被吞掉
           rm -rf ci-cd-action-deploy
-          git clone https://github.com
+          
+          GH_URL="https://github.com"
+          REPO_PATH="orozcohsu/ci-cd-action-deploy.git"
+          git clone "${GH_URL}/${REPO_PATH}"
+          
           cd ci-cd-action-deploy
 
           # 4. 安裝生產環境套件並用 PM2 啟動/重啟 3000 埠服務
