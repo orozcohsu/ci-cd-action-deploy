@@ -26,7 +26,7 @@ jobs:
     - name: 執行單元測試
       run: npm test
 
-  # 階段二：持續部署 (CD)
+    # 階段二：持續部署 (CD)
   deploy:
     needs: test # 必須等 test 成功通過才會執行部署
     runs-on: ubuntu-latest
@@ -39,28 +39,26 @@ jobs:
         password: ${{ secrets.SERVER_PASSWORD }}
         port: 22
         script: |
-          # 1. 自動修復主機軟體源：將斷線的 ossplanet 替換為官方預設穩定源
-          if grep -q "ossplanet.net" /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null; then
-            sed -i 's/mirror.ossplanet.net/archive.raspbian.org/g' /etc/apt/sources.list /etc/apt/sources.list.d/* 2>/dev/null || true
+          # 1. 繞過系統損壞的 Apt 軟體源，直接從 Node.js 官方二進位源下載安裝 Node.js 18 與 npm
+          if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
+            echo "檢測到系統缺乏 Node.js/npm，啟動官方獨立安裝程序..."
+            curl -fsSL https://nodesource.com | bash -
+            
+            # 使用官方專屬獨立指令，強行安裝編譯好的 nodejs (內含 npm)
+            apt-get install -y nodejs --fix-missing || true
+          fi
+          
+          # 如果系統 Apt 依然頑固報錯，啟動第二層保險：強制升級 npm
+          if ! command -v npm &> /dev/null; then
+            apt-get install -y npm --fix-missing || true
           fi
 
-          # 強制更新套件庫清單
-          apt-get update -y
-          
-          # 2. 安裝 Node.js 與 npm
-          if ! command -v node &> /dev/null; then
-            apt-get install -y nodejs
-          fi
-          
-          if ! command -v npm &> /dev/null; then
-            apt-get install -y npm
-          fi
-          
+          # 2. 安裝全域 PM2
           if ! command -v pm2 &> /dev/null; then
             npm install -g pm2
           fi
 
-          # 3. 進入網頁根目錄
+          # 3. 確保進入正確的根目錄
           mkdir -p /var/www
           cd /var/www
 
@@ -77,4 +75,3 @@ jobs:
           npm install --production
           pm2 delete "my-add-app" || true
           pm2 start server.js --name "my-add-app"
-
